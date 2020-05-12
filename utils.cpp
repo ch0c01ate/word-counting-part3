@@ -2,8 +2,8 @@
 #include <fstream>
 #include <archive.h>
 #include <archive_entry.h>
-#include <boost/filesystem/path.hpp>
 #include "utils.h"
+#include <boost/filesystem/path.hpp>
 
 void
 getConfig(std::map<std::string, std::string> &config, int &indexingThreadNum, int &mergeThreadNum, int &maxQueueSize,
@@ -69,33 +69,34 @@ void readIso(const std::string &file, concurrent_que<std::string> &q) {
 
     archive_read_support_filter_all(a);
     archive_read_support_format_all(a);
-    r = archive_read_open_filename(a, file.c_str(), 10240); // Note 1
+    r = archive_read_open_filename(a, file.c_str(), 10240);
     if (r != ARCHIVE_OK)
         exit(1);
 
     std::string dest;
 
-    boost::locale::generator gen;
-    std::locale loc = gen("en_US.UTF-8");
-    std::locale::global(loc);
+    int i =0;
 
+    std::vector<std::string> wordsVector;
 
     std::string text;
-    int i = 0;
+
     while (
             archive_read_next_header(a, &entry
             ) == ARCHIVE_OK) {
 
+        if (i > 4){
+            break;
+        }
         boost::filesystem::path entryPath = boost::filesystem::path(archive_entry_pathname(entry));
         if (entryPath.extension() != ".zip" && entryPath.extension() != ".ZIP")
-            continue;
-
-        if (archive_entry_pathname(entry)[0] != '4')
             continue;
 
         auto size = archive_entry_size(entry);
         dest = std::string(size, 0);
         r = archive_read_data(a, &dest[0], dest.size());
+
+
         archive_read_data_skip(a);
         a2 = archive_read_new();
         archive_read_support_filter_all(a2);
@@ -103,8 +104,17 @@ void readIso(const std::string &file, concurrent_que<std::string> &q) {
 
         r = archive_read_open_memory(a2, dest.c_str(), dest.size());
 
-        if (r != ARCHIVE_OK)
+        if (r != ARCHIVE_OK) {
+            archive_free(a2);
             continue;
+
+        }
+
+        // This file crashes the program
+        if (std::string(archive_entry_pathname(entry)).find("51753-0") != -1) {
+            archive_free(a2);
+            continue;
+        }
 
         while (archive_read_next_header(a2, &entry2) == ARCHIVE_OK) {
 
@@ -112,21 +122,34 @@ void readIso(const std::string &file, concurrent_que<std::string> &q) {
             if (entryPath2.extension() != ".txt" && entryPath2.extension() != ".TXT")
                 continue;
 
+
+
             auto size2 = archive_entry_size(entry2);
             if (size2 > 10000000)
                 continue;
-
+            ++i;
             text = std::string(size2, 0);
             r = archive_read_data(a2, &text[0], text.size());
 
-            q.push(std::move(text));
-            std::string().swap(text);
+            if (r == ARCHIVE_FATAL || r == ARCHIVE_EOF || r == ARCHIVE_RETRY) {
+                continue;
+            }
+
+            if (!text.empty()) {
+                q.push(std::move(text));
+                std::string().swap(text);
+            }
         }
 
-        archive_read_free(a2);
+        archive_free(a2);
     }
 
-    r = archive_read_free(a);
-    if (r != ARCHIVE_OK)
-        exit(1);
+
+    archive_free(a);
+    q.push(std::string{});
+
 }
+
+
+
+
