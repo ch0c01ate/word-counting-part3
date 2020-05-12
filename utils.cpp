@@ -4,7 +4,7 @@
 #include <archive_entry.h>
 #include "utils.h"
 #include <boost/filesystem/path.hpp>
-
+#include <memory>
 void
 getConfig(std::map<std::string, std::string> &config, int &indexingThreadNum, int &mergeThreadNum, int &maxQueueSize,
           const char *file) {
@@ -58,7 +58,7 @@ getConfig(std::map<std::string, std::string> &config, int &indexingThreadNum, in
 }
 
 
-void readIso(const std::string &file, concurrent_que<std::string> &q) {
+void readIso(const std::string &file, tbb::flow::function_node<std::shared_ptr<std::string>> &node) {
     struct archive *a;
     struct archive *a2;
     struct archive_entry *entry;
@@ -85,7 +85,7 @@ void readIso(const std::string &file, concurrent_que<std::string> &q) {
             archive_read_next_header(a, &entry
             ) == ARCHIVE_OK) {
 
-        if (i > 4){
+        if (i > 1){
             break;
         }
         boost::filesystem::path entryPath = boost::filesystem::path(archive_entry_pathname(entry));
@@ -136,7 +136,7 @@ void readIso(const std::string &file, concurrent_que<std::string> &q) {
             }
 
             if (!text.empty()) {
-                q.push(std::move(text));
+                node.try_put(std::make_shared<std::string>(text));
                 std::string().swap(text);
             }
         }
@@ -146,7 +146,7 @@ void readIso(const std::string &file, concurrent_que<std::string> &q) {
 
 
     archive_free(a);
-    q.push(std::string{});
+//    q.push(std::string{});
 
 }
 

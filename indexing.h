@@ -12,9 +12,9 @@
 #include <fstream>
 #include <algorithm>
 
-void create_words_map(std::string &def_words_vector, concurrent_que<myMap> &q);
+void create_words_map(std::shared_ptr<std::string>&str, std::locale& loc);
 
-void create_result(const myMap &words_map, const std::string &out_path, std::map<std::string, std::string> &);
+//void create_result(const myMap &words_map, const std::string &out_path, std::map<std::string, std::string> &);
 
 bool index(concurrent_que<std::string> &wordsQueue, concurrent_que<myMap> &mapsQueue);
 
