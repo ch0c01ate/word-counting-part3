@@ -3,31 +3,7 @@
 #include "utils.h"
 #include "indexing.h"
 #include <boost/locale.hpp>
-
-
-#include "tbb/flow_graph.h"
-#include "tbb/concurrent_hash_map.h"
-
-
-//
-//struct square {
-//    int operator()(int v) { return v * v; }
-//};
-//
-//struct cube {
-//    int operator()(int v) { return v * v * v; }
-//};
-//
-//class sum {
-//    int &my_sum;
-//public:
-//    sum(int &s) : my_sum(s) {}
-//
-//    int operator()(tuple<int, int> v) {
-//        my_sum += get<0>(v) + get<1>(v);
-//        return my_sum;
-//    }
-//};
+#include <utility>
 
 
 std::chrono::high_resolution_clock::time_point get_current_time_fenced() {
@@ -42,9 +18,19 @@ long long to_us(const D &d) {
     return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
 }
 
+void merge(std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>> toMerge) {
+    for (int i = 0; i < 3257; ++i) {
+        std::cout << i << std::endl;
+        if ( i == 3255){
+            std::cout << 2;
+        }
+    }
+    std::cout << "END";
+}
+
 int main(int argc, char *argv[]) {
 
-    tbb::concurrent_hash_map<std::string, int> globalMap{};
+    tbb::concurrent_unordered_map<std::string, int> globalMap{};
 
     std::map<std::string, std::string> config;
     const char *defaultConfigName = "../config.dat";
@@ -65,29 +51,25 @@ int main(int argc, char *argv[]) {
     std::locale::global(loc);
 
     tbb::flow::graph g;
-    tbb::flow::function_node<std::shared_ptr<std::string>> indexer(g,tbb::flow::unlimited,
-                                                  // @TODO
-                                                  [&](std::shared_ptr<std::string>   str ){
-                                                      create_words_map(str, loc);
-                                                  });
 
-    tbb::flow::function_node<std::string> reader(g, tbb::flow::unlimited, [&](const std::string& path) {
+    tbb::flow::function_node<std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>>> merger(g,
+              tbb::flow::unlimited,
+              [&](std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>> toMerge) {
+                  merge(std::move(toMerge));
+    });
+
+    tbb::flow::function_node<std::shared_ptr<std::string>> indexer(g, tbb::flow::unlimited,
+                                                                   [&](std::shared_ptr<std::string> str) {
+                                                                       create_words_map(str, loc, merger);
+                                                                   });
+
+    tbb::flow::function_node<std::string> reader(g, tbb::flow::unlimited, [&](const std::string &path) {
         readIso(path, indexer);
     });
 
-    tbb::flow::function_node<tbb::concurrent_hash_map<std::string, int>> merger(g, tbb::flow::unlimited,
-            [](){
 
-    }
-            );
-
-//
-//    tbb::flow::make_edge(reader, indexer);
-//
-//
-//
     reader.try_put(config["infile"]);
-//
+
     g.wait_for_all();
 
 //

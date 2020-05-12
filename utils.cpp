@@ -85,7 +85,7 @@ void readIso(const std::string &file, tbb::flow::function_node<std::shared_ptr<s
             archive_read_next_header(a, &entry
             ) == ARCHIVE_OK) {
 
-        if (i > 1){
+        if (i > 0){
             break;
         }
         boost::filesystem::path entryPath = boost::filesystem::path(archive_entry_pathname(entry));
