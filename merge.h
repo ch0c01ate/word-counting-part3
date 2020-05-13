@@ -75,7 +75,7 @@ public:
     size_t size() const { std::lock_guard<std::mutex> lg{m_m}; return que_m.size(); }
 };
 
-void mergeMaps(concurrent_que<myMap> &q);
-
+//void mergeMaps(concurrent_que<myMap> &q);
+void merge(myMap &left, myMap &right);
 
 #endif //COUNT_WORDS_1_MERGE_H

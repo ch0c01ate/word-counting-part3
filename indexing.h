@@ -12,12 +12,12 @@
 #include <fstream>
 #include <algorithm>
 
-void create_words_map(std::string &def_words_vector, concurrent_que<myMap> &q);
+myMap create_words_map(std::string &def_words_vector, std::locale& loc);
 
 void create_result(const myMap &words_map, const std::string &out_path, std::map<std::string, std::string> &);
 
-bool index(concurrent_que<std::string> &wordsQueue, concurrent_que<myMap> &mapsQueue);
+//bool index(concurrent_que<std::string> &wordsQueue, concurrent_que<myMap> &mapsQueue);
 
-void parallelIndexing(concurrent_que<std::string> &wordsQueue, concurrent_que<myMap> &mapsQueue, std::locale& loc);
+//void parallelIndexing(concurrent_que<std::string> &wordsQueue, concurrent_que<myMap> &mapsQueue, std::locale& loc);
 
 #endif //WORD_COUNTING_INDEXING_H

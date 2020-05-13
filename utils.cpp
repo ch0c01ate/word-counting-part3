@@ -58,7 +58,7 @@ getConfig(std::map<std::string, std::string> &config, int &indexingThreadNum, in
 }
 
 
-void readIso(const std::string &file, concurrent_que<std::string> &q) {
+void readIso(const std::string &file, tbb::flow::limiter_node<std::string> node) {
     struct archive *a;
     struct archive *a2;
     struct archive_entry *entry;
@@ -85,7 +85,7 @@ void readIso(const std::string &file, concurrent_que<std::string> &q) {
             archive_read_next_header(a, &entry
             ) == ARCHIVE_OK) {
 
-        if (i > 4){
+        if (i > 0){
             break;
         }
         boost::filesystem::path entryPath = boost::filesystem::path(archive_entry_pathname(entry));
@@ -136,8 +136,9 @@ void readIso(const std::string &file, concurrent_que<std::string> &q) {
             }
 
             if (!text.empty()) {
-                q.push(std::move(text));
-                std::string().swap(text);
+                bool isPushed = false;
+                while(!isPushed)
+                    isPushed = node.try_put(text);
             }
         }
 
@@ -146,8 +147,9 @@ void readIso(const std::string &file, concurrent_que<std::string> &q) {
 
 
     archive_free(a);
-    q.push(std::string{});
-
+    bool isPushed = false;
+    while(!isPushed)
+        isPushed = node.try_put(std::string{});
 }
 
 

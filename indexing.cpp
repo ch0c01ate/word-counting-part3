@@ -59,7 +59,7 @@ create_result(const myMap &words_map, const std::string &out_path, std::map<std:
 
 // Indexing functions
 
-void create_words_map(std::string &str, concurrent_que<myMap> &q, std::locale& loc) {
+myMap create_words_map(std::string &str, std::locale& loc) {
     myMap words_map;
 
     str = boost::locale::normalize(str, boost::locale::norm_nfd);
@@ -78,33 +78,35 @@ void create_words_map(std::string &str, concurrent_que<myMap> &q, std::locale& l
     }
 
     if (!words_map.empty())
-        q.push(std::move(words_map));
+        return words_map;
+
+    return myMap {};
 
 }
 
 
-bool index(concurrent_que<std::string> &wordsQueue, concurrent_que<myMap> &mapsQueue, std::locale& loc) {
-    std::string str;
-    wordsQueue.pop(str);
+//bool index(concurrent_que<std::string> &wordsQueue, concurrent_que<myMap> &mapsQueue, std::locale& loc) {
+//    std::string str;
+//    wordsQueue.pop(str);
+//
+//    if (str.empty()) {
+//        if (!wordsQueue.finishedPushing()) {
+//            wordsQueue.finish();
+//        }
+//        wordsQueue.push(std::move(str));
+//        return false;
+//    }
+//
+//    create_words_map(str, mapsQueue, loc);
+//
+//    std::string().swap(str);
+//
+//    return true;
+//
+//}
 
-    if (str.empty()) {
-        if (!wordsQueue.finishedPushing()) {
-            wordsQueue.finish();
-        }
-        wordsQueue.push(std::move(str));
-        return false;
-    }
-    
-    create_words_map(str, mapsQueue, loc);
-
-    std::string().swap(str);
-
-    return true;
-
-}
-
-void parallelIndexing(concurrent_que<std::string> &wordsQueue, concurrent_que<myMap> &mapsQueue, std::locale& loc){
-    while(index(wordsQueue, mapsQueue, loc)){
-
-    }
-}
+//void parallelIndexing(concurrent_que<std::string> &wordsQueue, concurrent_que<myMap> &mapsQueue, std::locale& loc){
+//    while(index(wordsQueue, mapsQueue, loc)){
+//
+//    }
+//}
