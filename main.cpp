@@ -18,12 +18,10 @@ long long to_us(const D &d) {
     return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
 }
 
-void merge(std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>> toMerge) {
-    for (int i = 0; i < 3257; ++i) {
-        std::cout << i << std::endl;
-        if ( i == 3255){
-            std::cout << 2;
-        }
+void merge(tbb::concurrent_unordered_map<std::string, int>& global, const std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>>& toMerge) {
+    for (auto &itr: *(toMerge)) {
+        if (!itr.first.empty())
+            global[itr.first] += itr.second;
     }
     std::cout << "END";
 }
@@ -55,7 +53,7 @@ int main(int argc, char *argv[]) {
     tbb::flow::function_node<std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>>> merger(g,
               tbb::flow::unlimited,
               [&](std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>> toMerge) {
-                  merge(std::move(toMerge));
+                  merge(globalMap,toMerge);
     });
 
     tbb::flow::function_node<std::shared_ptr<std::string>> indexer(g, tbb::flow::unlimited,
