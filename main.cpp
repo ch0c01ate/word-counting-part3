@@ -18,10 +18,11 @@ long long to_us(const D &d) {
     return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
 }
 
-void merge(tbb::concurrent_unordered_map<std::string, int>& global, const std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>>& toMerge) {
+void merge(tbb::concurrent_unordered_map<std::string, int>& global, tbb::concurrent_unordered_map<std::string, int>* toMerge) {
     for (auto &itr: *(toMerge)) {
-        if (!itr.first.empty())
+        if (!itr.first.empty()) {
             global[itr.first] += itr.second;
+        }
     }
     std::cout << "END";
 }
@@ -50,9 +51,9 @@ int main(int argc, char *argv[]) {
 
     tbb::flow::graph g;
 
-    tbb::flow::function_node<std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>>> merger(g,
+    tbb::flow::function_node<tbb::concurrent_unordered_map<std::string, int>*> merger(g,
               tbb::flow::unlimited,
-              [&](std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>> toMerge) {
+              [&](tbb::concurrent_unordered_map<std::string, int>* toMerge) {
                   merge(globalMap,toMerge);
     });
 
@@ -69,6 +70,10 @@ int main(int argc, char *argv[]) {
     reader.try_put(config["infile"]);
 
     g.wait_for_all();
+
+    for (auto& itr: globalMap){
+        std::cout << itr.first << " : " << itr.second << "\n";
+    }
 
 //
 //    concurrent_que<std::string> wordsQueue(maxQueueSize);

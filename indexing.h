@@ -13,8 +13,9 @@
 #include <algorithm>
 #include "tbb/flow_graph.h"
 #include "tbb/concurrent_unordered_map.h"
+void create_words_map(std::shared_ptr<std::string>&str, std::locale& loc,  tbb::flow::function_node<tbb::concurrent_unordered_map<std::string, int>*> merger);
 
-void create_words_map(std::shared_ptr<std::string>&str, std::locale& loc,  tbb::flow::function_node<std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>>> merger);
+//void create_words_map(std::shared_ptr<std::string>&str, std::locale& loc,  tbb::flow::function_node<std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>>> merger);
 
 //void create_result(const myMap &words_map, const std::string &out_path, std::map<std::string, std::string> &);
 
