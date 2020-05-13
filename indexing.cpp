@@ -14,7 +14,7 @@ std::pair<val_map, key_map> swap_pair_items(const std::pair<key_map, val_map> &p
 }
 
 template<typename key_map, typename val_map>
-std::multimap<val_map, key_map> swap_map_items(const std::unordered_map<key_map, val_map> &src) {
+std::multimap<val_map, key_map> swap_map_items(const tbb::concurrent_unordered_map<key_map, val_map> &src) {
     std::multimap<val_map, key_map> dst;
     std::transform(src.begin(), src.end(), std::inserter(dst, dst.begin()),
                    swap_pair_items<key_map, val_map>);
@@ -34,7 +34,7 @@ void print_to_file(std::ofstream &out_file, const std::string &first_arg, const 
 }
 
 void
-create_result(const myMap &words_map, const std::string &out_path, std::map<std::string, std::string> &config_map) {
+create_result(const tbb::concurrent_unordered_map<std::string, int> &words_map, const std::string &out_path, std::map<std::string, std::string> &config_map) {
     std::ofstream out_file;
     out_file.open(out_path, std::ios_base::out | std::ios_base::trunc);
     if (!out_file.is_open()) {
@@ -58,7 +58,7 @@ create_result(const myMap &words_map, const std::string &out_path, std::map<std:
 
 
 // Indexing functions
-void create_words_map(std::shared_ptr<std::string>&str, std::locale& loc,  tbb::flow::function_node<tbb::concurrent_unordered_map<std::string, int>*> merger){
+void create_words_map(std::string *str, std::locale& loc,  tbb::flow::function_node<tbb::concurrent_unordered_map<std::string, int>*> merger){
 
     tbb::concurrent_unordered_map<std::string, int> words_map;
 

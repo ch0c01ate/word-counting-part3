@@ -57,8 +57,8 @@ int main(int argc, char *argv[]) {
                   merge(globalMap,toMerge);
     });
 
-    tbb::flow::function_node<std::shared_ptr<std::string>> indexer(g, tbb::flow::unlimited,
-                                                                   [&](std::shared_ptr<std::string> str) {
+    tbb::flow::function_node<std::string *> indexer(g, tbb::flow::unlimited,
+                                                                   [&](std::string *str) {
                                                                        create_words_map(str, loc, merger);
                                                                    });
 
@@ -71,9 +71,10 @@ int main(int argc, char *argv[]) {
 
     g.wait_for_all();
 
-    for (auto& itr: globalMap){
-        std::cout << itr.first << " : " << itr.second << "\n";
-    }
+//
+//    for (auto& itr: globalMap){
+//        std::cout << itr.first << " : " << itr.second << "\n";
+//    }
 
 //
 //    concurrent_que<std::string> wordsQueue(maxQueueSize);
@@ -130,11 +131,10 @@ int main(int argc, char *argv[]) {
 //    }
 //    std::cout << counter << " words in total \n";
 //
-//    std::thread resByName(create_result, std::ref(wordsMap), std::ref(config["out_by_a"]), std::ref(config));
-//    std::thread resByNun(create_result, std::ref(wordsMap), std::ref(config["out_by_n"]), std::ref(config));
-//    resByName.join();
-//    resByNun.join();
-
+    std::thread resByName(create_result, std::ref(globalMap), std::ref(config["out_by_a"]), std::ref(config));
+    std::thread resByNun(create_result, std::ref(globalMap), std::ref(config["out_by_n"]), std::ref(config));
+    resByName.join();
+    resByNun.join();
 
     return 0;
 }

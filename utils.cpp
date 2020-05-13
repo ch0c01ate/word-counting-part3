@@ -58,7 +58,7 @@ getConfig(std::map<std::string, std::string> &config, int &indexingThreadNum, in
 }
 
 
-void readIso(const std::string &file, tbb::flow::function_node<std::shared_ptr<std::string>> &node) {
+void readIso(const std::string &file, tbb::flow::function_node<std::string *> &node) {
     struct archive *a;
     struct archive *a2;
     struct archive_entry *entry;
@@ -136,8 +136,8 @@ void readIso(const std::string &file, tbb::flow::function_node<std::shared_ptr<s
             }
 
             if (!text.empty()) {
-                node.try_put(std::make_shared<std::string>(text));
-                std::string().swap(text);
+                node.try_put(&text);
+                //std::string().swap(text);
             }
         }
 
