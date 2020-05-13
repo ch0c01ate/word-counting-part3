@@ -10,6 +10,6 @@
 
 
 void getConfig(std::map<std::string, std::string> &config, int &indexingThreadNum, int &mergeThreadNum, int &maxQueueSize, const char* file);
-void readIso(const std::string &file, tbb::flow::limiter_node<std::string> node);
+void readIso(const std::string &file, tbb::flow::queue_node<std::string> node);
 
 #endif //WORD_COUNTING_UTILS_H

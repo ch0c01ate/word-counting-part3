@@ -58,7 +58,7 @@ getConfig(std::map<std::string, std::string> &config, int &indexingThreadNum, in
 }
 
 
-void readIso(const std::string &file, tbb::flow::limiter_node<std::string> node) {
+void readIso(const std::string &file, tbb::flow::queue_node<std::string> node) {
     struct archive *a;
     struct archive *a2;
     struct archive_entry *entry;
@@ -136,10 +136,11 @@ void readIso(const std::string &file, tbb::flow::limiter_node<std::string> node)
             }
 
             if (!text.empty()) {
-                bool isPushed = false;
-                while(!isPushed)
-                    isPushed = node.try_put(text);
+//                bool isPushed = false;
+//                while(!isPushed)
+                  std::cout << node.try_put(text);
             }
+            std::cout<<"TUT";
         }
 
         archive_free(a2);
@@ -147,9 +148,9 @@ void readIso(const std::string &file, tbb::flow::limiter_node<std::string> node)
 
 
     archive_free(a);
-    bool isPushed = false;
-    while(!isPushed)
-        isPushed = node.try_put(std::string{});
+//    bool isPushed = false;
+//    while(!isPushed)
+    node.try_put(std::string{});
 }
 
 

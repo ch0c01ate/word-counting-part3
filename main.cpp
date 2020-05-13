@@ -46,13 +46,13 @@ int main(int argc, char *argv[]) {
     tbb::concurrent_queue<myMap> waitForMergeQueue;
     tbb::flow::graph g;
 
-    tbb::flow::limiter_node<std::string> indexingLimiter(g, maxQueueSize);
-    tbb::flow::limiter_node<myMap> mergingLimiter(g, maxQueueSize);
+//    tbb::flow::limiter_node<std::string> indexingLimiter(g, maxQueueSize);
+//    tbb::flow::limiter_node<myMap> mergingLimiter(g, maxQueueSize);
     tbb::flow::queue_node<std::string> indexingQueueNode(g);
     tbb::flow::queue_node<myMap> mergingQueueNode(g);
 
     tbb::flow::function_node<myMap, tbb::flow::continue_msg> merger(g, tbb::flow::unlimited, [&](myMap left){
-        mergingLimiter.decrement.try_put(tbb::flow::continue_msg());
+//        mergingLimiter.decrement.try_put(tbb::flow::continue_msg());
         if(left.empty())
             isMapProducingEnded = true;
         else {
@@ -60,42 +60,45 @@ int main(int argc, char *argv[]) {
             if(waitForMergeQueue.empty()) {
                 if (mergingQueueNode.try_get(right)) {
                     merge(left, right);
-                    bool isPushed = false;
-                    while (!isPushed)
-                        isPushed = mergingLimiter.try_put(left);
+//                    bool isPushed = false;
+//                    while (!isPushed)
+                    mergingQueueNode.try_put(left);
                 } else
                     waitForMergeQueue.push(left);
             }
             else {
                 waitForMergeQueue.try_pop(right);
                 merge(left, right);
-                bool isPushed = false;
-                while (!isPushed)
-                    isPushed = mergingLimiter.try_put(left);
+//                bool isPushed = false;
+//                while (!isPushed)
+                  mergingQueueNode.try_put(left);
             }
         }
     });
 
     tbb::flow::function_node<std::string, tbb::flow::continue_msg> indexer(g, tbb::flow::unlimited, [&](std::string text) {
-        indexingLimiter.decrement.try_put(tbb::flow::continue_msg());
+//        indexingLimiter.decrement.try_put(tbb::flow::continue_msg());
         myMap res;
+        std::cout << "HERE";
         if(text.empty())
             res = myMap {};
-        else
+        else {
             res = create_words_map(text, loc);
-
-        bool isPushed = false;
-        while(!isPushed)
-            isPushed = mergingLimiter.try_put(res);
+//        bool isPushed = false;
+//        while(!isPushed)
+            mergingQueueNode.try_put(res);
+        }
     });
 
     tbb::flow::function_node<std::string, tbb::flow::continue_msg> reader(g, tbb::flow::serial, [&](std::string filename){
-       readIso(filename, indexingLimiter);
+       readIso(filename, indexingQueueNode);
     });
 
-    tbb::flow::make_edge(indexingLimiter, indexingQueueNode);
-    tbb::flow::make_edge(mergingLimiter, mergingQueueNode);
-    tbb::flow::make_edge(indexingQueueNode, indexer);
+
+//    tbb::flow::make_edge(indexingLimiter, indexingQueueNode);
+//    tbb::flow::make_edge(mergingLimiter, mergingQueueNode);
+    indexingQueueNode.register_successor(indexer);
+    //tbb::flow::make_edge(indexingQueueNode, indexer);
     tbb::flow::make_edge(mergingQueueNode, merger);
 
     reader.try_put(config["infile"]);
