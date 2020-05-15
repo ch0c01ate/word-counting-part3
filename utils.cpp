@@ -58,7 +58,7 @@ getConfig(std::map<std::string, std::string> &config, int &indexingThreadNum, in
 }
 
 
-void readIso(const std::string &file, tbb::flow::function_node<std::string > &node) {
+void readIso(const std::string &file, tbb::flow::limiter_node<std::string> &node) {
     struct archive *a;
     struct archive *a2;
     struct archive_entry *entry;
@@ -85,9 +85,9 @@ void readIso(const std::string &file, tbb::flow::function_node<std::string > &no
             archive_read_next_header(a, &entry
             ) == ARCHIVE_OK) {
 
-//        if (i > 50){
-//            break;
-//        }
+        if (i > 10){
+            break;
+        }
         boost::filesystem::path entryPath = boost::filesystem::path(archive_entry_pathname(entry));
         if (entryPath.extension() != ".zip" && entryPath.extension() != ".ZIP")
             continue;
@@ -122,8 +122,6 @@ void readIso(const std::string &file, tbb::flow::function_node<std::string > &no
             if (entryPath2.extension() != ".txt" && entryPath2.extension() != ".TXT")
                 continue;
 
-
-
             auto size2 = archive_entry_size(entry2);
             if (size2 > 10000000)
                 continue;
@@ -136,7 +134,9 @@ void readIso(const std::string &file, tbb::flow::function_node<std::string > &no
             }
 
             if (!text.empty()) {
-                node.try_put(text);
+                bool isPushed = false;
+                while(!isPushed)
+                    isPushed = node.try_put(text);
                 std::string().swap(text);
             }
         }
