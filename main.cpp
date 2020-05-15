@@ -20,11 +20,12 @@ long long to_us(const D &d) {
 
 void
 merge(tbb::concurrent_unordered_map<std::string, int> &left,
-      const tbb::concurrent_unordered_map<std::string, int> &right) {
+      tbb::concurrent_unordered_map<std::string, int> &right) {
     for (const auto &itr: right) {
         if (!itr.first.empty())
             (left)[itr.first] += itr.second;
     }
+    right.clear();
 }
 
 int main(int argc, char *argv[]) {
@@ -58,35 +59,32 @@ int main(int argc, char *argv[]) {
     tbb::flow::function_node<tbb::concurrent_unordered_map<std::string, int> , tbb::flow::continue_msg> merger(g,
         tbb::flow::unlimited,
         [&](tbb::concurrent_unordered_map<std::string, int> left) {
-        //        mergingLimiter.decrement.try_put(tbb::flow::continue_msg());
             std::cout
-                    << "Merger";
+                    << "Merger\n";
             tbb::concurrent_unordered_map<std::string, int> right;
             if (waitForMergeQueue.empty()) {
                 if (mergingQueueNode.try_get( right)) {
                     merge(left, right);
-        //                merge(left, right);
-        //                    bool isPushed = false;
-        //                    while (!isPushed)
                     mergingQueueNode.try_put(left);
-                } else
+                } else {
                     waitForMergeQueue.push(left);
+                    std::cout
+                            << "123123\n";
+                }
             } else {
                 waitForMergeQueue.try_pop(right);
                 merge(left, right);
-        //                bool isPushed = false;
-        //                while (!isPushed)
                 mergingQueueNode.try_put(left);
             }
         });
 
 
-    tbb::flow::function_node<std::string *> indexer(g, tbb::flow::unlimited,
-                                                    [&](std::string *str) {
+    tbb::flow::function_node<std::string> indexer(g, tbb::flow::unlimited,
+                                                    [&](const std::string& str) {
                                                         create_words_map(str, loc, mergingQueueNode);
                                                     });
 
-    tbb::flow::function_node<std::string> reader(g, tbb::flow::unlimited, [&](const std::string &path) {
+    tbb::flow::function_node<std::string> reader(g, tbb::flow::serial, [&](const std::string &path) {
         readIso(path, indexer);
     });
 
@@ -95,74 +93,11 @@ int main(int argc, char *argv[]) {
 
     g.wait_for_all();
 
-    std::cout << "asdasdasd: " << waitForMergeQueue.unsafe_size() << std::endl;
 
     tbb::concurrent_unordered_map<std::string, int> globalMap{};
     waitForMergeQueue.try_pop(globalMap);
 
-    for (auto &itr: globalMap) {
-        std::cout << itr.first << " : " << itr.second << "\n";
-    }
-//
-//    for (auto& itr: globalMap){
-//        std::cout << itr.first << " : " << itr.second << "\n";
-//    }
 
-//
-//    concurrent_que<std::string> wordsQueue(maxQueueSize);
-//    concurrent_que<myMap> mapsQueue(maxQueueSize);
-//
-//
-//
-//
-//    std::vector<std::thread> wordMapsThreads;
-//
-//    auto start = get_current_time_fenced();
-//
-//    for (int i = 0; i < threadNum; ++i) {
-//        wordMapsThreads.emplace_back(parallelIndexing, std::ref(wordsQueue), std::ref(mapsQueue), std::ref(loc));
-//    }
-//
-//    std::vector<std::thread> mergeThreads;
-//
-//    for (long i = 0; i < mergeThreadNum; ++i) {
-//        mergeThreads.emplace_back(mergeMaps, std::ref(mapsQueue));
-//    }
-//
-//    readIso(config["infile"], wordsQueue);
-//
-//
-//    for (auto &thr: wordMapsThreads) {
-//        thr.join();
-//    }
-//
-//    mapsQueue.finish();
-//    mapsQueue.push(std::move(myMap{}));
-//
-//
-//    for (auto &t: mergeThreads) {
-//        t.join();
-//    }
-//
-//    auto end = get_current_time_fenced();
-//
-//
-//    myMap wordsMap;
-//    mapsQueue.pop(wordsMap);
-//
-//
-//    auto stopIndexing = get_current_time_fenced();
-//
-//    std::cout << "Time in us: " << to_us(end - start) << std::endl;
-//
-//    std::cout << wordsMap.size() << " unique words  \n";
-//
-//    unsigned long counter = 0;
-//    for (auto &itr: wordsMap) {
-//        counter += itr.second;
-//    }
-//    std::cout << counter << " words in total \n";
-//
     std::thread resByName(create_result, std::ref(globalMap), std::ref(config["out_by_a"]), std::ref(config));
     std::thread resByNun(create_result, std::ref(globalMap), std::ref(config["out_by_n"]), std::ref(config));
     resByName.join();
