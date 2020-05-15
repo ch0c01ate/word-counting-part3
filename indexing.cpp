@@ -71,17 +71,17 @@ myMap create_words_map(std::string &str, std::locale& loc) {
 
     resultMap.rule(boost::locale::boundary::word_any);
 
+    int i = 0;
+
     for (boost::locale::boundary::ssegment_index::iterator it = resultMap.begin(), e = resultMap.end();
          it != e; ++it) {
-        if (!it->empty())
+        if (!it->empty()) {
+            i++;
             ++words_map[*it];
+        }
     }
 
-    if (!words_map.empty())
-        return words_map;
-
-    return myMap {};
-
+    return words_map;
 }
 
 

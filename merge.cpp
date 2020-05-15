@@ -11,7 +11,7 @@ void merge(myMap &left, myMap &right) {
         if (!itr.first.empty())
             left[itr.first] += itr.second;
     }
-    myMap().swap(right);
+//    myMap().swap(right);
 }
 
 //void mergeMaps(concurrent_que<myMap> &q) {

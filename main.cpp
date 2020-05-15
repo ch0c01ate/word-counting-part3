@@ -149,8 +149,8 @@ int main(int argc, char *argv[]) {
 //
 //
 //
-//    myMap wordsMap;
-//    mapsQueue.pop(wordsMap);
+    myMap wordsMap;
+    waitForMergeQueue.try_pop(wordsMap);
 //
 //
 //    auto stopIndexing = get_current_time_fenced();
@@ -165,10 +165,10 @@ int main(int argc, char *argv[]) {
 //    }
 //    std::cout << counter << " words in total \n";
 //
-//    std::thread resByName(create_result, std::ref(wordsMap), std::ref(config["out_by_a"]), std::ref(config));
-//    std::thread resByNun(create_result, std::ref(wordsMap), std::ref(config["out_by_n"]), std::ref(config));
-//    resByName.join();
-//    resByNun.join();
+    std::thread resByName(create_result, std::ref(wordsMap), std::ref(config["out_by_a"]), std::ref(config));
+    std::thread resByNun(create_result, std::ref(wordsMap), std::ref(config["out_by_n"]), std::ref(config));
+    resByName.join();
+    resByNun.join();
 
 //////    END
 
