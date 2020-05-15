@@ -4,7 +4,7 @@
 #include "indexing.h"
 #include <boost/locale.hpp>
 #include <utility>
-
+#include "tbb/concurrent_queue.h"
 
 std::chrono::high_resolution_clock::time_point get_current_time_fenced() {
     std::atomic_thread_fence(std::memory_order_seq_cst);
@@ -18,13 +18,12 @@ long long to_us(const D &d) {
     return std::chrono::duration_cast<std::chrono::microseconds>(d).count();
 }
 
-void merge(tbb::concurrent_unordered_map<std::string, int>& global, tbb::concurrent_unordered_map<std::string, int>* toMerge) {
-    for (auto &itr: *(toMerge)) {
-        if (!itr.first.empty()) {
-            global[itr.first] += itr.second;
-        }
+void
+merge(tbb::concurrent_unordered_map<std::string, int>*left, const tbb::concurrent_unordered_map<std::string, int>& right) {
+    for (const auto &itr: right) {
+        if (!itr.first.empty())
+            (*left)[itr.first] += itr.second;
     }
-    std::cout << "END";
 }
 
 int main(int argc, char *argv[]) {
@@ -51,15 +50,43 @@ int main(int argc, char *argv[]) {
 
     tbb::flow::graph g;
 
-    tbb::flow::function_node<tbb::concurrent_unordered_map<std::string, int>*> merger(g,
-              tbb::flow::unlimited,
-              [&](tbb::concurrent_unordered_map<std::string, int>* toMerge) {
-                  merge(globalMap,toMerge);
+
+    tbb::flow::queue_node<tbb::concurrent_unordered_map<std::string, int>> mergingQueueNode(g);
+    tbb::concurrent_queue<tbb::concurrent_unordered_map<std::string, int>> waitForMergeQueue;
+
+//    tbb::flow::function_node<tbb::concurrent_unordered_map<std::string, int>*> merger2(g,
+//              tbb::flow::unlimited,
+//              [&](tbb::concurrent_unordered_map<std::string, int>* toMerge) {
+//                  merge(globalMap,toMerge);
+//    });
+
+    tbb::flow::function_node<tbb::concurrent_unordered_map<std::string, int>*, tbb::flow::continue_msg> merger(g, tbb::flow::unlimited, [&]( tbb::concurrent_unordered_map<std::string, int>* left){
+//        mergingLimiter.decrement.try_put(tbb::flow::continue_msg());
+        std::cout << "Merger";
+        tbb::concurrent_unordered_map<std::string, int> right;
+        if(waitForMergeQueue.empty()) {
+            if (mergingQueueNode.try_get(right)) {
+                merge(left, right);
+//                merge(left, right);
+//                    bool isPushed = false;
+//                    while (!isPushed)
+                mergingQueueNode.try_put(*left);
+            } else
+                waitForMergeQueue.push(*left);
+        }
+        else {
+            waitForMergeQueue.try_pop(right);
+            merge(left, right);
+//                bool isPushed = false;
+//                while (!isPushed)
+            mergingQueueNode.try_put(*left);
+        }
     });
+
 
     tbb::flow::function_node<std::string *> indexer(g, tbb::flow::unlimited,
                                                                    [&](std::string *str) {
-                                                                       create_words_map(str, loc, merger);
+                                                                       create_words_map(str, loc, mergingQueueNode);
                                                                    });
 
     tbb::flow::function_node<std::string> reader(g, tbb::flow::unlimited, [&](const std::string &path) {
