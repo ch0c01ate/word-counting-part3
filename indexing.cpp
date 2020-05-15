@@ -58,7 +58,7 @@ create_result(const tbb::concurrent_unordered_map<std::string, int> &words_map, 
 
 
 // Indexing functions
-void create_words_map(std::string *str, std::locale& loc,  tbb::flow::function_node<tbb::concurrent_unordered_map<std::string, int>*> merger){
+void create_words_map(std::string *str, std::locale& loc,   tbb::flow::queue_node<tbb::concurrent_unordered_map<std::string, int>>& merger){
 
     tbb::concurrent_unordered_map<std::string, int> words_map;
 
@@ -78,7 +78,8 @@ void create_words_map(std::string *str, std::locale& loc,  tbb::flow::function_n
     }
 
     if (!words_map.empty())
-        merger.try_put(&words_map);
+        merger.try_put(words_map);
+
 //        q.push(std::move(words_map));
 
 }
