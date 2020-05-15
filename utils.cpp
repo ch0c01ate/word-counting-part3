@@ -85,9 +85,9 @@ void readIso(const std::string &file, tbb::flow::function_node<std::string > &no
             archive_read_next_header(a, &entry
             ) == ARCHIVE_OK) {
 
-//        if (i > 50){
-//            break;
-//        }
+        if (i > 10){
+            break;
+        }
         boost::filesystem::path entryPath = boost::filesystem::path(archive_entry_pathname(entry));
         if (entryPath.extension() != ".zip" && entryPath.extension() != ".ZIP")
             continue;
@@ -143,6 +143,7 @@ void readIso(const std::string &file, tbb::flow::function_node<std::string > &no
 
         archive_free(a2);
     }
+
 
 
     archive_free(a);

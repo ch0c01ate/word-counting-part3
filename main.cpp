@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
 
 
     tbb::flow::function_node<std::string> indexer(g, tbb::flow::unlimited,
-                                                    [&](const std::string &str) {
+                                                    [&](std::string str) {
                                                         create_words_map(str, loc, mergingQueueNode);
                                                     });
 
@@ -88,6 +88,7 @@ int main(int argc, char *argv[]) {
     reader.try_put(config["infile"]);
 
     g.wait_for_all();
+
 
 
     tbb::concurrent_unordered_map<std::string, int> globalMap{};
