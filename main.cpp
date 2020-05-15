@@ -51,10 +51,9 @@ int main(int argc, char *argv[]) {
 
     tbb::flow::graph g;
 
-
+    tbb::flow::limiter_node<std::string> indexingLimiter(g, maxQueueSize);
     tbb::flow::queue_node<tbb::concurrent_unordered_map<std::string, int> > mergingQueueNode(g);
     tbb::concurrent_queue<tbb::concurrent_unordered_map<std::string, int> > waitForMergeQueue;
-
 
     tbb::flow::function_node<tbb::concurrent_unordered_map<std::string, int> , tbb::flow::continue_msg> merger(g,
         tbb::flow::unlimited,
@@ -77,14 +76,16 @@ int main(int argc, char *argv[]) {
 
     tbb::flow::function_node<std::string> indexer(g, tbb::flow::unlimited,
                                                     [&](const std::string &str) {
+                                                        indexingLimiter.decrement.try_put(tbb::flow::continue_msg());
                                                         create_words_map(str, loc, mergingQueueNode);
                                                     });
 
     tbb::flow::function_node<std::string> reader(g, tbb::flow::serial, [&](const std::string &path) {
-        readIso(path, indexer);
+        readIso(path, indexingLimiter);
     });
 
     tbb::flow::make_edge(mergingQueueNode, merger);
+    tbb::flow::make_edge(indexingLimiter, indexer);
     reader.try_put(config["infile"]);
 
     g.wait_for_all();
