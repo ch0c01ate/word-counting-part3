@@ -59,17 +59,13 @@ int main(int argc, char *argv[]) {
     tbb::flow::function_node<tbb::concurrent_unordered_map<std::string, int> , tbb::flow::continue_msg> merger(g,
         tbb::flow::unlimited,
         [&](tbb::concurrent_unordered_map<std::string, int> left) {
-            std::cout
-                    << "Merger\n";
             tbb::concurrent_unordered_map<std::string, int> right;
             if (waitForMergeQueue.empty()) {
                 if (mergingQueueNode.try_get( right)) {
                     merge(left, right);
                     mergingQueueNode.try_put(left);
                 } else {
-                    waitForMergeQueue.push(left);
-                    std::cout
-                            << "123123\n";
+                    waitForMergeQueue.push(std::move(left));
                 }
             } else {
                 waitForMergeQueue.try_pop(right);
@@ -80,7 +76,7 @@ int main(int argc, char *argv[]) {
 
 
     tbb::flow::function_node<std::string> indexer(g, tbb::flow::unlimited,
-                                                    [&](const std::string& str) {
+                                                    [&](const std::string &str) {
                                                         create_words_map(str, loc, mergingQueueNode);
                                                     });
 
