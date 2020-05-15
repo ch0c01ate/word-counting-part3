@@ -58,7 +58,7 @@ getConfig(std::map<std::string, std::string> &config, int &indexingThreadNum, in
 }
 
 
-void readIso(const std::string &file, tbb::flow::function_node<std::string *> &node) {
+void readIso(const std::string &file, tbb::flow::function_node<std::string > &node) {
     struct archive *a;
     struct archive *a2;
     struct archive_entry *entry;
@@ -85,7 +85,7 @@ void readIso(const std::string &file, tbb::flow::function_node<std::string *> &n
             archive_read_next_header(a, &entry
             ) == ARCHIVE_OK) {
 
-        if (i > 0){
+        if (i > 50){
             break;
         }
         boost::filesystem::path entryPath = boost::filesystem::path(archive_entry_pathname(entry));
@@ -136,7 +136,7 @@ void readIso(const std::string &file, tbb::flow::function_node<std::string *> &n
             }
 
             if (!text.empty()) {
-                node.try_put(&text);
+                node.try_put(text);
                 //std::string().swap(text);
             }
         }

@@ -58,15 +58,15 @@ create_result(const tbb::concurrent_unordered_map<std::string, int> &words_map, 
 
 
 // Indexing functions
-void create_words_map(std::string *str, std::locale& loc,   tbb::flow::queue_node<tbb::concurrent_unordered_map<std::string, int>>& merger){
+void create_words_map(std::string str, std::locale& loc,   tbb::flow::queue_node<tbb::concurrent_unordered_map<std::string, int>>& merger){
 
     tbb::concurrent_unordered_map<std::string, int> words_map;
 
-    *str = boost::locale::normalize(*str, boost::locale::norm_nfd);
-    *str = boost::locale::fold_case(*str);
+    str = boost::locale::normalize(str, boost::locale::norm_nfd);
+    str = boost::locale::fold_case(str);
 
-    boost::locale::boundary::ssegment_index resultMap(boost::locale::boundary::word, str->begin(),
-                                                      str->end(), loc);
+    boost::locale::boundary::ssegment_index resultMap(boost::locale::boundary::word, str.begin(),
+                                                      str.end(), loc);
 
 
     resultMap.rule(boost::locale::boundary::word_any);
@@ -77,9 +77,9 @@ void create_words_map(std::string *str, std::locale& loc,   tbb::flow::queue_nod
             ++words_map[*it];
     }
 
-    if (!words_map.empty())
+    if (!words_map.empty()) {
         merger.try_put(words_map);
-
+    }
 //        q.push(std::move(words_map));
 
 }
