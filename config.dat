@@ -1,6 +1,6 @@
-infile=../input/guttenberg_2020_03_06.iso
-out_by_a=../result/result_by_name_2.txt
-out_by_n=../result/result_by_number_2.txt
-max_queue_size=4
+infile=./input/guttenberg_2020_03_06.iso
+out_by_a=./result/result_by_name_2.txt
+out_by_n=./result/result_by_number_2.txt
+max_queue_size=200
 indexing_thread_num=5
 merge_thread_num=2

@@ -85,9 +85,9 @@ void readIso(const std::string &file, tbb::flow::limiter_node<std::string> &node
             archive_read_next_header(a, &entry
             ) == ARCHIVE_OK) {
 
-        if (i > 10){
-            break;
-        }
+//        if (i > 0){
+//            break;
+//        }
         boost::filesystem::path entryPath = boost::filesystem::path(archive_entry_pathname(entry));
         if (entryPath.extension() != ".zip" && entryPath.extension() != ".ZIP")
             continue;
