@@ -52,7 +52,7 @@ int main(int argc, char *argv[]) {
 
     tbb::flow::graph g;
 
-    tbb::flow::limiter_node<std::string> indexingLimiter(g, maxQueueSize);
+    tbb::flow::limiter_node<std::shared_ptr<std::string>> indexingLimiter(g, maxQueueSize);
     tbb::flow::queue_node<concUnMapPtr> mergingQueueNode(g);
     tbb::concurrent_queue<concUnMapPtr> waitForMergeQueue;
 
@@ -75,7 +75,7 @@ int main(int argc, char *argv[]) {
         });
 
 
-    tbb::flow::function_node<std::string> indexer(g, tbb::flow::unlimited,
+    tbb::flow::function_node<std::shared_ptr<std::string>> indexer(g, tbb::flow::unlimited,
                                                     [&](const std::string &str) {
                                                         indexingLimiter.decrement.try_put(tbb::flow::continue_msg());
                                                         create_words_map(str, loc, mergingQueueNode);
