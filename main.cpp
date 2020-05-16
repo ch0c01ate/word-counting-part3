@@ -76,7 +76,7 @@ int main(int argc, char *argv[]) {
 
 
     tbb::flow::function_node<std::shared_ptr<std::string>> indexer(g, tbb::flow::unlimited,
-                                                    [&](const std::string &str) {
+                                                    [&](std::shared_ptr<std::string> str) {
                                                         indexingLimiter.decrement.try_put(tbb::flow::continue_msg());
                                                         create_words_map(str, loc, mergingQueueNode);
                                                     });

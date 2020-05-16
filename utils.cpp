@@ -85,9 +85,9 @@ void readIso(const std::string &file, tbb::flow::limiter_node<std::shared_ptr<st
             archive_read_next_header(a, &entry
             ) == ARCHIVE_OK) {
 
-//        if (i > 0){
-//            break;
-//        }
+        if (i > 10){
+            break;
+        }
         boost::filesystem::path entryPath = boost::filesystem::path(archive_entry_pathname(entry));
         if (entryPath.extension() != ".zip" && entryPath.extension() != ".ZIP")
             continue;
@@ -136,7 +136,7 @@ void readIso(const std::string &file, tbb::flow::limiter_node<std::shared_ptr<st
             if (!text.empty()) {
                 bool isPushed = false;
                 while(!isPushed)
-                    isPushed = node.try_put(std::make_shared<std::string>( std::move(text));
+                    isPushed = node.try_put(std::make_shared<std::string>( std::move(text)));
 //                std::string().swap(text);
             }
         }

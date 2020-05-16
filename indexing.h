@@ -18,7 +18,7 @@
 using concUnMap = tbb::concurrent_unordered_map<std::string, int>;
 using concUnMapPtr = std::shared_ptr<concUnMap>;
 
-void create_words_map( std::string str, std::locale& loc, tbb::flow::queue_node<concUnMapPtr>& merger);
+void create_words_map( std::shared_ptr<std::string> &str, std::locale& loc, tbb::flow::queue_node<concUnMapPtr>& merger);
 //void create_words_map(std::shared_ptr<std::string>&str, std::locale& loc,  tbb::flow::function_node<std::shared_ptr<tbb::concurrent_unordered_map<std::string, int>>> merger);
 
 void create_result(const concUnMapPtr &words_map, const std::string &out_path, std::map<std::string, std::string> &config_map);
