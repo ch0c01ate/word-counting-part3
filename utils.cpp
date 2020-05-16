@@ -137,7 +137,7 @@ void readIso(const std::string &file, tbb::flow::limiter_node<std::shared_ptr<st
                 bool isPushed = false;
                 while(!isPushed)
                     isPushed = node.try_put(std::make_shared<std::string>( std::move(text));
-                std::string().swap(text);
+//                std::string().swap(text);
             }
         }
 
