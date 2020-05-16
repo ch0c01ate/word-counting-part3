@@ -57,8 +57,8 @@ getConfig(std::map<std::string, std::string> &config, int &indexingThreadNum, in
         throw std::invalid_argument("Wrong max queue size!");
 }
 
+void readIso(const std::string &file, tbb::flow::limiter_node<std::string*> &node, std::mutex& m, std::condition_variable&cv){
 
-void readIso(const std::string &file, tbb::flow::function_node<std::string > &node) {
     struct archive *a;
     struct archive *a2;
     struct archive_entry *entry;
@@ -79,15 +79,14 @@ void readIso(const std::string &file, tbb::flow::function_node<std::string > &no
 
     std::vector<std::string> wordsVector;
 
-    std::string text;
 
     while (
             archive_read_next_header(a, &entry
             ) == ARCHIVE_OK) {
 
-        if (i > 10){
-            break;
-        }
+//        if (i > 10){
+//            break;
+//        }
         boost::filesystem::path entryPath = boost::filesystem::path(archive_entry_pathname(entry));
         if (entryPath.extension() != ".zip" && entryPath.extension() != ".ZIP")
             continue;
@@ -122,22 +121,25 @@ void readIso(const std::string &file, tbb::flow::function_node<std::string > &no
             if (entryPath2.extension() != ".txt" && entryPath2.extension() != ".TXT")
                 continue;
 
-
-
             auto size2 = archive_entry_size(entry2);
             if (size2 > 10000000)
                 continue;
             ++i;
-            text = std::string(size2, 0);
+            std::string text(size2, 0);
             r = archive_read_data(a2, &text[0], text.size());
+            auto textPtr = new std::string(text);
+            std::string().swap(text);
 
             if (r == ARCHIVE_FATAL || r == ARCHIVE_EOF || r == ARCHIVE_RETRY) {
                 continue;
             }
 
-            if (!text.empty()) {
-                node.try_put(text);
-                std::string().swap(text);
+            if (!textPtr->empty()) {
+                std::unique_lock<std::mutex> lg{m};
+                cv.wait(lg, [&](){ return node.try_put(textPtr);});
+            }
+            if (i % 10000 == 0){
+                std::cout << i  << "\n";
             }
         }
 
@@ -145,12 +147,7 @@ void readIso(const std::string &file, tbb::flow::function_node<std::string > &no
     }
 
 
-
     archive_free(a);
 //    q.push(std::string{});
 
 }
-
-
-
-

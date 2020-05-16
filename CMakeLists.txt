@@ -19,7 +19,6 @@ set (Boost_USE_STATIC_LIBS OFF)
 set (Boost_USE_MULTITHREAD ON)
 find_package( Boost REQUIRED COMPONENTS filesystem locale system)
 
-
 include_directories(${Boost_INCLUDE_DIRS} )
 add_executable(word_counting main.cpp utils.h utils.cpp indexing.h indexing.cpp merge.h merge.cpp)
 target_link_libraries(word_counting -ltbb ${LibArchive} ${Boost_LIBRARIES})

@@ -34,7 +34,7 @@ void print_to_file(std::ofstream &out_file, const std::string &first_arg, const 
 }
 
 void
-create_result(const tbb::concurrent_unordered_map<std::string, int> &words_map, const std::string &out_path, std::map<std::string, std::string> &config_map) {
+create_result(const tbb::concurrent_unordered_map<std::string, int> *words_map, const std::string &out_path, std::map<std::string, std::string> &config_map) {
     std::ofstream out_file;
     out_file.open(out_path, std::ios_base::out | std::ios_base::trunc);
     if (!out_file.is_open()) {
@@ -43,12 +43,12 @@ create_result(const tbb::concurrent_unordered_map<std::string, int> &words_map, 
     }
 
     if (out_path == config_map["out_by_a"]) {
-        std::map<std::string, int> ordered_words_map(words_map.begin(), words_map.end());
+        std::map<std::string, int> ordered_words_map((*words_map).begin(), (*words_map).end());
         for (auto &word_data : ordered_words_map) {
             print_to_file(out_file, word_data.first, std::to_string(word_data.second));
         }
     } else if (out_path == config_map["out_by_n"]) {
-        std::multimap<int, std::string> dst = swap_map_items(words_map);
+        std::multimap<int, std::string> dst = swap_map_items((*words_map));
         for (auto word_data = dst.rbegin(); word_data != dst.rend(); ++word_data) {
             print_to_file(out_file, word_data->second, std::to_string(word_data->first));
         }
@@ -58,15 +58,14 @@ create_result(const tbb::concurrent_unordered_map<std::string, int> &words_map, 
 
 
 // Indexing functions
-void create_words_map(std::string &str, std::locale& loc,   tbb::flow::queue_node<tbb::concurrent_unordered_map<std::string, int>>& merger){
+void create_words_map(std::string *str, std::locale& loc,   tbb::flow::queue_node<tbb::concurrent_unordered_map<std::string, int>*>& merger){
+    auto *words_map = new tbb::concurrent_unordered_map<std::string, int>;
 
-    tbb::concurrent_unordered_map<std::string, int> words_map;
+    *str = boost::locale::normalize(*str, boost::locale::norm_nfd);
+    *str = boost::locale::fold_case(*str);
 
-    str = boost::locale::normalize(str, boost::locale::norm_nfd);
-    str = boost::locale::fold_case(str);
-
-    boost::locale::boundary::ssegment_index resultMap(boost::locale::boundary::word, str.begin(),
-                                                      str.end(), loc);
+    boost::locale::boundary::ssegment_index resultMap(boost::locale::boundary::word, str->begin(),
+                                                      str->end(), loc);
 
 
     resultMap.rule(boost::locale::boundary::word_any);
@@ -74,13 +73,13 @@ void create_words_map(std::string &str, std::locale& loc,   tbb::flow::queue_nod
     for (boost::locale::boundary::ssegment_index::iterator it = resultMap.begin(), e = resultMap.end();
          it != e; ++it) {
         if (!it->empty())
-            ++words_map[*it];
+            ++(*words_map)[*it];
     }
 
-    if (!words_map.empty()) {
+    if (!words_map->empty()) {
         merger.try_put(words_map);
     }
-    std::string{}.swap(str);
+    delete(str);
 
 //        q.push(std::move(words_map));
 
